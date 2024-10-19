@@ -32,8 +32,53 @@ async fn health_check_works() {
 #[tokio::test]
 async fn subscribe_returns_200_for_valid_form_data() {
     // Arrange
+    let app_addr = spawn_app();
+    let client = reqwest::Client::new();
+    let endpoint = format!("{}/subscription", &app_addr);
 
     // Act
+    let body = "name=john%20doe&email=john.doe%40gmail.com";
+    let resp = client
+        .post(endpoint)
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .body(body)
+        .send()
+        .await
+        .expect("Failed to execute request");
 
     // Assert
+    assert_eq!(200, resp.status().as_u16());
+}
+
+#[tokio::test]
+async fn subscribe_returns_400_when_data_is_missing() {
+    // Arrange
+    let app_addr = spawn_app();
+    let client = reqwest::Client::new();
+    let endpoint = format!("{}/subscription", &app_addr);
+
+    let test_cases = vec![
+        ("name=john%20doe", "missing the email"),
+        ("email=john.doe%40gmail.com", "missing the name"),
+        ("", "missing both name and email"),
+    ];
+
+    for (invalid_body, error_msg) in test_cases {
+        // Act
+        let resp = client
+            .post(&endpoint)
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(invalid_body)
+            .send()
+            .await
+            .expect("Failed to execute request");
+
+        // Assert
+        assert_eq!(
+            400,
+            resp.status().as_u16(),
+            "The API did not fail with 400 Bad request when the payload was {}",
+            error_msg
+        );
+    }
 }
