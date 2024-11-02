@@ -6,7 +6,7 @@ pub struct Settings {
     pub database: DatabaseSettings,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, Clone)]
 pub struct DatabaseSettings {
     pub username: String,
     pub password: String,
